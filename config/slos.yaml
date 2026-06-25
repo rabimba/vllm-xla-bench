@@ -1,0 +1,46 @@
+# slos.yaml — SLO targets used to compute goodput (DistServe definition).
+#
+# A request is "good" iff TTFT <= ttft_slo_ms AND TPOT <= tpot_slo_ms. Goodput is the
+# rate of good requests. Targets are interactive-serving oriented and informed by
+# MLPerf Inference Server-scenario constraints (e.g., Llama-3.1-405B uses P99 TTFT
+# 6000 ms / P99 TPOT 175 ms); smaller models warrant tighter bounds.
+#
+# Keyed by model-tag; run_matrix.py falls back to 'default' if the tag is absent.
+# Pick ONE SLO per model class and hold it fixed across all backends/hardware — the
+# whole point of goodput is a single fixed yardstick.
+
+default:
+  ttft_slo_ms: 2000
+  tpot_slo_ms: 100      # 10 tokens/s/user floor
+
+llama-3.1-8b:
+  ttft_slo_ms: 1000
+  tpot_slo_ms: 50       # 20 tok/s/user (chat-grade)
+
+llama-3.1-70b:
+  ttft_slo_ms: 2000
+  tpot_slo_ms: 80
+
+gemma-4-31b:
+  ttft_slo_ms: 1500
+  tpot_slo_ms: 80
+
+gemma-4-26b:
+  ttft_slo_ms: 1500
+  tpot_slo_ms: 80
+
+gemma-4-e4b:
+  ttft_slo_ms: 800
+  tpot_slo_ms: 40
+
+nemotron-nano-30b:
+  ttft_slo_ms: 1500
+  tpot_slo_ms: 80
+
+qwen3-next-80b:
+  ttft_slo_ms: 2000
+  tpot_slo_ms: 100
+
+qwen3-coder-480b:
+  ttft_slo_ms: 4000
+  tpot_slo_ms: 150

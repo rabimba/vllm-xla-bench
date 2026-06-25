@@ -1,0 +1,22 @@
+# pricing.yaml — on-demand $/hour per hardware target, for perf-per-dollar.
+#
+# !! FILL THESE IN at run time from the pricing you actually pay !!
+# The numbers below are PLACEHOLDERS marked with `# CONFIRM`. Cost efficiency is the
+# single most disputed metric in TPU-vs-GPU comparisons (cf. the Nov-2025 Artificial
+# Analysis vs Google exchange), so:
+#   - use the SAME pricing basis for every platform (all on-demand, or all 1-yr CUD);
+#   - per-HOST price for an 8-chip TPU VM vs per-GPU price -> normalize to the unit you
+#     actually serve a model on (a single tp-group);
+#   - always present perf-per-dollar next to a note on engineering-effort asymmetry
+#     (vLLM-CUDA is far more optimized than the TPU paths today).
+#
+# Key MUST match the --hardware-label you pass to run_matrix.py.
+
+# GPU (per single GPU, on-demand cloud list price)
+h200: 0.00            # CONFIRM  e.g. ~3.5-4.5 $/GPU-hr depending on provider
+rtx-pro-6000: 0.00    # CONFIRM  workstation/cloud-workstation rate; NOT a datacenter peer
+
+# TPU (per HOST = 8 chips, on-demand). Divide by chips-per-tp-group if you serve on
+# fewer chips than a full host.
+tpu-v5e-8: 0.00       # CONFIRM
+tpu-v6e-8: 0.00       # CONFIRM

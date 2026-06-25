@@ -1,0 +1,70 @@
+# workloads.yaml — the load patterns swept at each QPS in run_matrix.py.
+#
+# Two families:
+#  (a) sharegpt  — realistic, mixed prompt/output lengths (report the length
+#                  histograms alongside results; they drive the numbers).
+#  (b) synthetic — fixed (input, output) shapes. These isolate a single point in
+#                  shape-space, which (1) makes cross-backend comparison clean and
+#                  (2) lets the XLA-bucketing story be measured precisely.
+#
+# ignore_eos=true on synthetic forces EXACTLY output_len tokens so decode length is
+# identical across backends. sharegpt uses fixed_output_len to do the same when set.
+
+workloads:
+  # ---- realistic ----
+  - name: sharegpt_real
+    dataset: sharegpt
+    num_prompts: 1000
+    max_prompt_len: 8192
+    burstiness: 1.0          # Poisson
+    # no fixed_output_len => use dataset completion lengths
+
+  - name: sharegpt_out128
+    dataset: sharegpt
+    num_prompts: 1000
+    max_prompt_len: 8192
+    fixed_output_len: 128    # clean decode length, realistic prompts
+    burstiness: 1.0
+
+  - name: sharegpt_bursty
+    dataset: sharegpt
+    num_prompts: 1000
+    max_prompt_len: 8192
+    fixed_output_len: 128
+    burstiness: 0.4          # bursty arrivals stress the scheduler & cold paths
+
+  # ---- fixed-shape synthetic (prefill-heavy -> decode-heavy ladder) ----
+  - name: synth_128_128       # short/short: scheduler & overhead bound
+    dataset: synthetic
+    input_len: 128
+    output_len: 128
+    num_prompts: 1000
+    ignore_eos: true
+
+  - name: synth_1024_128      # prefill-heavy: TTFT & prefill compute story
+    dataset: synthetic
+    input_len: 1024
+    output_len: 128
+    num_prompts: 1000
+    ignore_eos: true
+
+  - name: synth_1024_1024     # balanced
+    dataset: synthetic
+    input_len: 1024
+    output_len: 1024
+    num_prompts: 500
+    ignore_eos: true
+
+  - name: synth_4096_256      # long-context prefill: KV pressure & bucketing
+    dataset: synthetic
+    input_len: 4096
+    output_len: 256
+    num_prompts: 500
+    ignore_eos: true
+
+  - name: synth_256_2048      # decode-heavy: memory-bandwidth bound, TPOT story
+    dataset: synthetic
+    input_len: 256
+    output_len: 2048
+    num_prompts: 300
+    ignore_eos: true

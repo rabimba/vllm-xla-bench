@@ -1,0 +1,81 @@
+# models.yaml — the benchmark suite.
+#
+# Each entry records the HF id and the *recommended* tensor-parallel degree and
+# max-model-len per hardware target. These are STARTING points; record whatever you
+# actually run via collect_env.py. tp values assume: H200 (141GB HBM3e),
+# RTX PRO 6000 Blackwell (96GB GDDR7, NO NVLink -> PCIe TP penalty),
+# TPU v5e (16GB/chip, host=8 chips), TPU v6e/Trillium (32GB/chip, host=8 chips).
+#
+# precision: bf16 is the cross-platform baseline. fp8 is native on H200 + Blackwell
+# and supported on v6e; fp4 is Blackwell-only. Run bf16 everywhere for the apples-to
+# -apples cell, then add native-precision cells separately (precision is a confound).
+
+models:
+  # ---- Dense reference controls (validate the harness on these FIRST) ----
+  - tag: llama-3.1-8b
+    hf_id: meta-llama/Llama-3.1-8B-Instruct
+    family: dense
+    role: reference
+    tp: {h200: 1, rtx-pro-6000: 1, tpu-v5e-8: 1, tpu-v6e-8: 1}
+    max_model_len: 8192
+    note: "clean dense control; compare against published vLLM numbers"
+
+  - tag: llama-3.1-70b
+    hf_id: meta-llama/Llama-3.1-70B-Instruct
+    family: dense
+    role: reference
+    tp: {h200: 2, rtx-pro-6000: 4, tpu-v5e-8: 8, tpu-v6e-8: 8}
+    max_model_len: 8192
+    note: "70B dense; RTX PRO 6000 needs TP=4 over PCIe (expect interconnect hit)"
+
+  # ---- Google-native matched dense/MoE pair (the controlled centerpiece) ----
+  - tag: gemma-4-31b
+    hf_id: google/gemma-4-31b-it
+    family: dense
+    role: matched-pair
+    tp: {h200: 1, rtx-pro-6000: 2, tpu-v5e-8: 4, tpu-v6e-8: 4}
+    max_model_len: 32768
+    note: "31B bf16 fits a single 80GB-class GPU; dense half of the matched pair"
+
+  - tag: gemma-4-26b
+    hf_id: google/gemma-4-26b-a4b-it
+    family: moe
+    role: matched-pair
+    tp: {h200: 1, rtx-pro-6000: 2, tpu-v5e-8: 4, tpu-v6e-8: 4}
+    max_model_len: 32768
+    note: "26B total / 3.8B active MoE; MaxText path needs prefuse_moe_weights=True for TP>1"
+
+  - tag: gemma-4-e4b
+    hf_id: google/gemma-4-e4b-it
+    family: dense
+    role: small-iteration
+    tp: {h200: 1, rtx-pro-6000: 1, tpu-v5e-8: 1, tpu-v6e-8: 1}
+    max_model_len: 32768
+    note: "cheap target for validating the harness before burning hours on 70B-class"
+
+  # ---- MoE / hybrid stress tests (add LAST; expect feature gaps on vLLM-TPU) ----
+  - tag: nemotron-nano-30b
+    hf_id: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16
+    family: moe-hybrid
+    role: stress
+    tp: {h200: 1, rtx-pro-6000: 2, tpu-v5e-8: 8, tpu-v6e-8: 4}
+    max_model_len: 32768
+    note: "hybrid Mamba-2 + GQA + MoE; stresses XLA fusion AND paged KV management"
+
+  - tag: qwen3-next-80b
+    hf_id: Qwen/Qwen3-Next-80B-A3B-Instruct
+    family: moe-hybrid
+    role: stress
+    tp: {h200: 2, rtx-pro-6000: 4, tpu-v5e-8: 8, tpu-v6e-8: 8}
+    max_model_len: 32768
+    trust_remote_code: true
+    note: "high-sparsity MoE + Gated DeltaNet/Gated Attention hybrid; MTP for decode"
+
+  - tag: qwen3-coder-480b
+    hf_id: Qwen/Qwen3-Coder-480B-A35B-Instruct
+    family: moe
+    role: stress-large
+    tp: {h200: 8, rtx-pro-6000: 0, tpu-v5e-8: 0, tpu-v6e-8: 8}   # 0 = won't fit single host
+    max_model_len: 32768
+    trust_remote_code: true
+    note: "480B/35B active; needs multi-host on most targets. Treat as optional/stretch."

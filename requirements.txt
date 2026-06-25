@@ -1,0 +1,12 @@
+# Client-side deps ONLY (the benchmark driver + analysis). Deliberately minimal so it
+# installs on any box that can reach the servers. The SERVERS (vllm, jax, tpu-inference,
+# maxtext, torch) are installed per-machine via the serve/ scripts and their recipes —
+# do NOT install vllm just to run the client.
+aiohttp>=3.9
+numpy>=1.24
+transformers>=4.44          # tokenizers for prompt-length measurement
+PyYAML>=6.0                 # config parsing
+matplotlib>=3.7             # analysis figures
+# Optional, only if you build synthetic prompts from very large tokenizers:
+# sentencepiece>=0.1.99
+# tiktoken>=0.5
