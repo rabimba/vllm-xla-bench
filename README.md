@@ -112,7 +112,7 @@ tar czf results_$(hostname)_$(date +%Y%m%d).tgz results/
 I will run `analyze/analyze.py` on the combined tree, drop the figures into the report
 and the deck, and write the results narrative.
 
-## Generating figures locally (optional — I can do this for you)
+## Generating figures locally
 ```bash
 # fill config/pricing.yaml first if you want the perf-per-dollar chart
 python analyze/analyze.py --results results --pricing config/pricing.yaml --out analysis_out
